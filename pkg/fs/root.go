@@ -40,6 +40,7 @@ type root struct {
 	recent *recentDir
 	roots  *rootsDir
 	atDir  *atDir
+	versionsDir *versionsDir
 }
 
 func (n *root) Attr() fuse.Attr {
@@ -59,6 +60,7 @@ func (n *root) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 		{Name: "roots"},
 		{Name: "at"},
 		{Name: "sha1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
+		{Name: "versions"},
 	}, nil
 }
 
@@ -89,6 +91,15 @@ func (n *root) getAtDir() *atDir {
 	return n.atDir
 }
 
+func (n *root) getVersionsDir() *versionsDir {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.versionsDir == nil {
+		n.versionsDir = &versionsDir{fs: n.fs}
+	}
+	return n.versionsDir
+}
+
 func (n *root) Lookup(name string, intr fs.Intr) (fs.Node, fuse.Error) {
 	switch name {
 	case ".quitquitquit":
@@ -103,6 +114,8 @@ func (n *root) Lookup(name string, intr fs.Intr) (fs.Node, fuse.Error) {
 		return n.getAtDir(), nil
 	case "roots":
 		return n.getRootsDir(), nil
+	case "versions":
+		return n.getVersionsDir(), nil
 	case "sha1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx":
 		return notImplementDirNode{}, nil
 	case ".camli_fs_stats":
